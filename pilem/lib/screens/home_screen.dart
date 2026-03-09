@@ -13,8 +13,8 @@ class HomeScreen extends StatefulWidget {
 class HomeScreenState extends State<HomeScreen> {
   final ApiService _apiService = ApiService();
   List<Movie> _allMovies = [];
-  List<Movie> _TrendingMovies = [];
-  List<Movie> _Moviespopular = [];
+  List<Movie> _trendingMovies = [];
+  List<Movie> _popularMovies = [];
 
   @override
   void initState() {
@@ -23,11 +23,19 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadMovies() async {
-    final List<Map<String, dynamic>> allMoviesData = await _apiService
-        .getAllMovies();
-
+    final List<Map<String, dynamic>> allMoviesData =
+        await _apiService.getAllMovies();
+    //trending
+    final List<Map<String, dynamic>> trendingMoviesData =
+        await _apiService.getTrendingMovies();
+    //populer
+    final List<Map<String, dynamic>> popularMoviesData =
+        await _apiService.getPopularMovies();
+     
     setState(() {
       _allMovies = allMoviesData.map((e) => Movie.fromJson(e)).toList();
+      _trendingMovies = trendingMoviesData.map((e) => Movie.fromJson(e)).toList();
+      _popularMovies = popularMoviesData.map((e) => Movie.fromJson(e)).toList();
     });
   }
 
@@ -38,12 +46,20 @@ class HomeScreenState extends State<HomeScreen> {
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [_buildMoviesList('All Movies', _allMovies)],
+          children: [
+            _buildMoviesList('All Movies', _allMovies),
+            //trending
+            _buildMoviesList('Trending Movies', _trendingMovies),
+            //populer
+            _buildMoviesList('Popular Movies', _popularMovies),
+            
+          ],
         ),
       ),
     );
   }
 
+  
   Widget _buildMoviesList(String title, List<Movie> movies) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
