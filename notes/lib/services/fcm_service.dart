@@ -13,7 +13,7 @@ class FcmService {
   final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-  static const String _baseUrl = 'https://notes-rest-api.vercel.app';
+  static const String _baseUrl = 'https://notes-rest-api-zeta.vercel.app';
   static const String _topicName = 'notes';
 
   /// Initialize FCM and Local Notifications
@@ -23,14 +23,17 @@ class FcmService {
       NotificationSettings? settings;
       try {
         settings = await _messaging
-            .requestPermission(alert: true, badge: true, sound: true)
+            .requestPermission(
+              alert: true,
+              badge: true,
+              sound: true,
+            )
             .timeout(const Duration(seconds: 10));
       } catch (e) {
         debugPrint('FCM permission request timed out or failed: $e');
       }
 
-      if (settings != null &&
-          settings.authorizationStatus == AuthorizationStatus.authorized) {
+      if (settings != null && settings.authorizationStatus == AuthorizationStatus.authorized) {
         debugPrint('User granted permission');
       } else {
         debugPrint('User declined, timed out, or has not accepted permission');
@@ -41,11 +44,10 @@ class FcmService {
         const AndroidInitializationSettings initializationSettingsAndroid =
             AndroidInitializationSettings('@mipmap/ic_launcher');
 
-        const InitializationSettings initializationSettings =
-            InitializationSettings(
-              android: initializationSettingsAndroid,
-              iOS: DarwinInitializationSettings(),
-            );
+        const InitializationSettings initializationSettings = InitializationSettings(
+          android: initializationSettingsAndroid,
+          iOS: DarwinInitializationSettings(),
+        );
 
         // Use dynamic to bypass strict compile-time checks on Web
         final dynamic localNotifications = _localNotificationsPlugin;
@@ -67,8 +69,7 @@ class FcmService {
 
         await localNotifications
             .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin
-            >()
+                AndroidFlutterLocalNotificationsPlugin>()
             ?.createNotificationChannel(channel);
 
         // 4. Handle Foreground Messages
@@ -77,12 +78,10 @@ class FcmService {
           debugPrint('Message data: ${message.data}');
 
           RemoteNotification? notification = message.notification;
-
+          
           if (notification != null) {
-            debugPrint(
-              'Message also contained a notification: ${notification.title}',
-            );
-
+            debugPrint('Message also contained a notification: ${notification.title}');
+            
             localNotifications.show(
               id: notification.hashCode,
               title: notification.title,
@@ -103,7 +102,7 @@ class FcmService {
             // Handle data-only messages if they contain title/body
             final title = message.data['title'] ?? 'Catatan Baru';
             final body = message.data['body'] ?? 'Cek aplikasi Anda';
-
+            
             localNotifications.show(
               id: message.hashCode,
               title: title,
@@ -125,28 +124,20 @@ class FcmService {
       } else {
         // On Web, foreground messages are handled by the browser
         FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-          debugPrint(
-            'Foreground message on web: ${message.notification?.title}',
-          );
+          debugPrint('Foreground message on web: ${message.notification?.title}');
         });
       }
 
       // 5. Subscribe to topics (Mobile Only)
       if (!kIsWeb) {
-        await _messaging
-            .subscribeToTopic(_topicName)
-            .timeout(
-              const Duration(seconds: 10),
-              onTimeout: () =>
-                  debugPrint('Subscription to topic $_topicName timed out'),
-            );
-        await _messaging
-            .subscribeToTopic('berita')
-            .timeout(
-              const Duration(seconds: 10),
-              onTimeout: () =>
-                  debugPrint('Subscription to topic berita timed out'),
-            );
+        await _messaging.subscribeToTopic(_topicName).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () => debugPrint('Subscription to topic $_topicName timed out'),
+        );
+        await _messaging.subscribeToTopic('berita').timeout(
+          const Duration(seconds: 10),
+          onTimeout: () => debugPrint('Subscription to topic berita timed out'),
+        );
         debugPrint('Subscribed to topics: $_topicName and berita');
       }
 
@@ -166,6 +157,34 @@ class FcmService {
     }
   }
 
+    /// Subscribe to a specific topic
+  Future<void> subscribeToTopic(String topic) async {
+    if (kIsWeb) {
+      debugPrint('Topic subscription is not supported on Web.');
+      return;
+    }
+    try {
+      await _messaging.subscribeToTopic(topic);
+      debugPrint('Successfully subscribed to topic: $topic');
+    } catch (e) {
+      debugPrint('Error subscribing to topic $topic: $e');
+    }
+  }
+
+  /// Unsubscribe from a specific topic
+  Future<void> unsubscribeFromTopic(String topic) async {
+    if (kIsWeb) {
+      debugPrint('Topic unsubscription is not supported on Web.');
+      return;
+    }
+    try {
+      await _messaging.unsubscribeFromTopic(topic);
+      debugPrint('Successfully unsubscribed from topic: $topic');
+    } catch (e) {
+      debugPrint('Error unsubscribing from topic $topic: $e');
+    }
+  }
+
   /// Send notification via REST API when a note is added
   Future<void> sendNoteNotification({
     required String title,
@@ -173,8 +192,7 @@ class FcmService {
   }) async {
     try {
       final now = DateTime.now();
-      final formattedDate =
-          "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+      final formattedDate = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
 
       final response = await http.post(
         Uri.parse('$_baseUrl/send-to-topic'),
@@ -185,8 +203,7 @@ class FcmService {
           'body': description,
           'data': {
             'senderName': 'User Notes',
-            'senderPhoto':
-                'https://firebase.google.com/static/images/brand-guidelines/logo-vertical.png',
+            'senderPhoto': 'https://firebase.google.com/static/images/brand-guidelines/logo-vertical.png',
             'created_at': formattedDate,
             'click_action': 'FLUTTER_NOTIFICATION_CLICK',
             'type': 'new_note',
