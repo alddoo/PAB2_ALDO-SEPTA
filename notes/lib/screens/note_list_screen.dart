@@ -7,7 +7,6 @@ import '../widgets/note_dialog.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../services/fcm_service.dart';
-import 'subscribe_screen.dart';
 
 class NoteListScreen extends StatefulWidget {
   const NoteListScreen({super.key});
@@ -18,7 +17,7 @@ class NoteListScreen extends StatefulWidget {
 
 class _NoteListScreenState extends State<NoteListScreen> {
   final NoteService _noteService = NoteService();
-  final FcmService _fcmService = FcmService(); // tambahkan instance FcmService
+  final FcmService _fcmService = FcmService(); // tambahan
 
   /// Show dialog to add a new note
   Future<void> _addNote() async {
@@ -30,13 +29,11 @@ class _NoteListScreenState extends State<NoteListScreen> {
     if (note != null) {
       try {
         await _noteService.addNote(note);
-
-        // Send notification via REST API
-        await _fcmService.sendNoteNotification(
-          title: note.title,
-          description: note.description,
-        );
-
+         // Send notification via REST API
+    await _fcmService.sendNoteNotification(
+      title: note.title,
+      description: note.description,
+    );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -189,21 +186,7 @@ class _NoteListScreenState extends State<NoteListScreen> {
               }
             },
           ),
-
-          IconButton(
-            icon: const Icon(Icons.subscriptions),
-            tooltip: 'Langganan Topik',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SubscribeScreen(),
-                ),
-              );
-            },
-          ),
         ],
-
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
         elevation: 0,
